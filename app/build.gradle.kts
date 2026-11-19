@@ -4,7 +4,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-val buildNumber = (System.getenv("VERSION_CODE") ?: "1").toInt()
+val hasReleaseKey = System.getenv("SIGNING_KEYSTORE_PATH")
+    ?.let { file(it).let { f -> f.exists() && f.length() > 0 } } == true
+
+val buildNumber =(System.getenv("VERSION_CODE") ?: "1").toInt()
 
 android {
     namespace = "com.grentropy.soundclip"
@@ -21,7 +24,7 @@ android {
     signingConfigs {
         create("release") {
             val ks = System.getenv("SIGNING_KEYSTORE_PATH")
-            if (ks != null) {
+            if (hasReleaseKey) {
                 storeFile = file(ks)
                 storePassword = System.getenv("SIGNING_STORE_PASSWORD")
                 keyAlias = System.getenv("SIGNING_KEY_ALIAS")
@@ -33,7 +36,9 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            // Without the real key (e.g. secret not configured) fall back to the debug key
+            // so the build still produces an installable APK.
+            signingConfig = signingConfigs.getByName(if (hasReleaseKey) "release" else "debug")
         }
     }
 

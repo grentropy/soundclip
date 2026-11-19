@@ -26,7 +26,12 @@ jobs:
       - name: Restore signing key
         env:
           KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
-        run: echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          else
+            echo "::warning::SIGNING_KEYSTORE_B64 not set; using a temporary debug key"
+          fi
 
       - name: Build release APK
         env:
